@@ -4,6 +4,7 @@
 #include <RTClib.h>
 #include <Servo.h>
 
+const int OK_BUTTON_IR_CODE = 0xFD708F;
 const int RECV_PIN = 7;
 IRrecv irrecv(RECV_PIN);
 decode_results results;
@@ -52,7 +53,8 @@ void setMotorTime() {
 
   while (results.value != OK_BUTTON_IR_CODE) {
     if (irrecv.decode(&results)) {
-      if (results.value == NUMBER_BUTTON_IR_CODE) {
+      char buttonChar = getButtonChar(results.value);
+      if (buttonChar != '\0') {
         char buttonChar = getButtonChar(results.value);
         timeString += buttonChar;
         Serial.print(buttonChar);
