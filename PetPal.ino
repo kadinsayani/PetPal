@@ -24,7 +24,7 @@ void setup() {
     Serial.flush();
     abort();
   }
-  rtc.adjust(DateTime(2023, 11, 14, 08, 16, 0));
+  rtc.adjust(DateTime(2023, 11, 14, 8, 16, 0));
 }
 
 void loop() {
@@ -32,7 +32,7 @@ void loop() {
     Serial.println(results.value, HEX);
 
     switch (results.value) {
-    case 0xFF30CF:
+    case 0xFD708F:
       setMotorTime();
       break;
     default:
@@ -73,11 +73,28 @@ void setMotorTime() {
 }
 
 char getButtonChar(unsigned long irCode) {
-  if (irCode == 0xFFE01F)
+  switch (irCode) {
+  case 0xFD08F7:
     return '1';
-  else if (irCode == 0xFF906F)
+  case 0xFD8877:
     return '2';
-  return '\0';
+  case 0xFD48B7:
+    return '3';
+  case 0xFD28D7:
+    return '4';
+  case 0xFDA857:
+    return '5';
+  case 0xFD6897:
+    return '6';
+  case 0xFD18E7:
+    return '7';
+  case 0xFD9867:
+    return '8';
+  case 0xFD58A7:
+    return '9';
+  default:
+    return '\0';
+  }
 }
 
 void setMotorStartTime(int hours, int minutes) {
