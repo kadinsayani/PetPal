@@ -1,4 +1,4 @@
-#include <IRremote.h>
+#include <IRremote.hpp>
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <RTClib.h>
@@ -82,15 +82,13 @@ char getButtonChar(unsigned long irCode) {
 
 void setMotorStartTime(int hours, int minutes) {
   while (true) {
-    tmElements_t tm;
-    if (RTC.read(tm)) {
-      if (tm.Hour == hours && tm.Minute == minutes) {
-        Serial.println("Motor triggered!");
-        motor.write(90);
-        delay(1000);
-        motor.write(0);
-        break;
-      }
+    DateTime now = rtc.now();
+    if (now.hour() == hours && now.minute() == minutes) {
+      Serial.println("Motor triggered!");
+      motor.write(90);
+      delay(1000);
+      motor.write(0);
+      break;
     }
     delay(1000);
   }
