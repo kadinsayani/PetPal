@@ -1,7 +1,7 @@
-#include <RTClib.h>
 #include <IRremote.h>
 #include <Keypad.h>
 #include <LiquidCrystal.h>
+#include <RTClib.h>
 #include <Servo.h>
 
 const int RECV_PIN = 7;
@@ -24,11 +24,7 @@ void setup() {
     Serial.flush();
     abort();
   }
-  unsigned long myUnixTime =
-      1659916800; 
-  unsigned long mytimeSeg = (1234);      
-  myUnixTime = myUnixTime + (mytimeSeg); 
-  rtc.adjust(myUnixTime);
+  rtc.adjust(DateTime(2023, 11, 14, 08, 16, 0));
 }
 
 void loop() {
@@ -36,7 +32,7 @@ void loop() {
     Serial.println(results.value, HEX);
 
     switch (results.value) {
-    case 0xFF30CF: 
+    case 0xFF30CF:
       setMotorTime();
       break;
     default:
@@ -49,16 +45,14 @@ void loop() {
 
 void setMotorTime() {
   Serial.println("Enter the desired time using the remote (HH:MM format):");
-  String timeString = ""; 
+  String timeString = "";
   while (!irrecv.decode(&results)) {
     // Wait for IR input
   }
 
-  while (results.value !=
-         OK_BUTTON_IR_CODE) {
+  while (results.value != OK_BUTTON_IR_CODE) {
     if (irrecv.decode(&results)) {
-      if (results.value ==
-          NUMBER_BUTTON_IR_CODE) { 
+      if (results.value == NUMBER_BUTTON_IR_CODE) {
         char buttonChar = getButtonChar(results.value);
         timeString += buttonChar;
         Serial.print(buttonChar);
@@ -83,7 +77,7 @@ char getButtonChar(unsigned long irCode) {
     return '1';
   else if (irCode == 0xFF906F)
     return '2';
-  return '\0'; 
+  return '\0';
 }
 
 void setMotorStartTime(int hours, int minutes) {
@@ -92,9 +86,9 @@ void setMotorStartTime(int hours, int minutes) {
     if (RTC.read(tm)) {
       if (tm.Hour == hours && tm.Minute == minutes) {
         Serial.println("Motor triggered!");
-        motor.write(90); 
-        delay(1000);     
-        motor.write(0);  
+        motor.write(90);
+        delay(1000);
+        motor.write(0);
         break;
       }
     }
