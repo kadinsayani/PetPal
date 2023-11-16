@@ -3,7 +3,7 @@
 #include <RTClib.h>
 #include <Servo.h>
 
-const uint32_t OK_BUTTON_IR_CODE = 0xF20DFF00;
+const uint32_t OK_BUTTON_IR_CODE = 64;
 const int IR_RECEIVE_PIN = 11;
 
 const int motorPin = 9;
@@ -12,6 +12,10 @@ Servo motor;
 RTC_DS1307 rtc;
 DateTime now;
 DateTime targetTime;
+
+int userInputCount = 0;
+char userInput[4]; // Store up to 4 digits
+bool motorTriggered = false; // Flag to track if the motor has been triggered
 
 void setup() {
   Serial.begin(9600);
@@ -33,16 +37,20 @@ void setup() {
 
 void loop() {
   now = rtc.now();
-  if (now.unixtime() >= targetTime.unixtime()) {
+  Serial.println(String(now.unixtime()));
+  delay(5000);
+  Serial.println(String(targetTime.unixtime()));
+  if (!motorTriggered && now.unixtime() >= targetTime.unixtime()) {
     Serial.println("Motor triggered!");
-    motor.write(90);
+    motor.write(180-55);
     delay(5000);
-    motor.write(0);
+    motor.write(180-100);
   }
 
   if (IrReceiver.decode()) {
     Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);
     if (IrReceiver.decodedIRData.decodedRawData == OK_BUTTON_IR_CODE) {
+      motorTriggered = false;
       Serial.println("OK button pressed!");
       setMotorTime();
     }
@@ -52,15 +60,36 @@ void loop() {
 
 void setMotorTime() {
   Serial.println("Setting motor time...");
-  if (IrReceiver.decode()) {
-    char buttonChar = getButtonChar(IrReceiver.decodedIRData.decodedRawData);
-    Serial.println(buttonChar);
-    IrReceiver.resume();
+  userInputCount = 0;
+  memset(userInput, 0, sizeof(userInput)); // Clear the userInput array
+
+  while (userInputCount < 4) {
+    if (IrReceiver.decode()) {
+      char buttonChar = getButtonChar(IrReceiver.decodedIRData.decodedRawData);
+      if (buttonChar >= '0' && buttonChar <= '9') {
+        Serial.print("Button pressed: ");
+        Serial.println(buttonChar);
+        
+        userInput[userInputCount] = buttonChar;
+        userInputCount++;
+      }
+
+      IrReceiver.resume();
+    }
   }
+
+  // Convert the userInput to an integer and set the target time
+  int hours = (userInput[0] - '0') * 10 + (userInput[1] - '0');
+  int minutes = (userInput[2] - '0') * 10 + (userInput[3] - '0');
+
+  targetTime = DateTime(now.year(), now.month(), now.day(), hours, minutes, 0);
+  Serial.println("Target time set to: " + String(targetTime.unixtime()));
 }
 
 char getButtonChar(uint32_t irCode) {
   switch (irCode) {
+  case 0xE916FF00:
+    return '0';
   case 0xF30CFF00:
     return '1';
   case 0xE718FF00:
