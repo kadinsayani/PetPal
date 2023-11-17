@@ -3,7 +3,7 @@
 #include <RTClib.h>
 #include <Servo.h>
 
-const uint32_t OK_BUTTON_IR_CODE = 64;
+const uint32_t OK_BUTTON_IR_CODE = 0xF20DFF00;
 const int IR_RECEIVE_PIN = 11;
 
 const int motorPin = 9;
@@ -14,8 +14,8 @@ DateTime now;
 DateTime targetTime;
 
 int userInputCount = 0;
-char userInput[4]; // Store up to 4 digits
-bool motorTriggered = false; // Flag to track if the motor has been triggered
+char userInput[4];
+bool motorTriggered = false;
 
 void setup() {
   Serial.begin(9600);
@@ -40,17 +40,23 @@ void loop() {
   Serial.println(String(now.unixtime()));
   delay(5000);
   Serial.println(String(targetTime.unixtime()));
-  if (!motorTriggered && now.unixtime() >= targetTime.unixtime()) {
+
+  if (now.unixtime() >= targetTime.unixtime()) {
+    motorTriggered = true;
+  }
+
+  while (motorTriggered) {
     Serial.println("Motor triggered!");
-    motor.write(180-55);
+    motor.write(180 - 45);
     delay(5000);
-    motor.write(180-100);
+    motor.write(180 - 100);
+    delay(5000);
+    motorTriggered = false;
   }
 
   if (IrReceiver.decode()) {
     Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);
     if (IrReceiver.decodedIRData.decodedRawData == OK_BUTTON_IR_CODE) {
-      motorTriggered = false;
       Serial.println("OK button pressed!");
       setMotorTime();
     }
@@ -61,7 +67,7 @@ void loop() {
 void setMotorTime() {
   Serial.println("Setting motor time...");
   userInputCount = 0;
-  memset(userInput, 0, sizeof(userInput)); // Clear the userInput array
+  memset(userInput, 0, sizeof(userInput));
 
   while (userInputCount < 4) {
     if (IrReceiver.decode()) {
@@ -69,7 +75,7 @@ void setMotorTime() {
       if (buttonChar >= '0' && buttonChar <= '9') {
         Serial.print("Button pressed: ");
         Serial.println(buttonChar);
-        
+
         userInput[userInputCount] = buttonChar;
         userInputCount++;
       }
@@ -78,7 +84,6 @@ void setMotorTime() {
     }
   }
 
-  // Convert the userInput to an integer and set the target time
   int hours = (userInput[0] - '0') * 10 + (userInput[1] - '0');
   int minutes = (userInput[2] - '0') * 10 + (userInput[3] - '0');
 
